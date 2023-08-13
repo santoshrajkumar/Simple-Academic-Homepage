@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 50%;
+    }
+  
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #dddddd;
+    }
+    </style>
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <script src="excellentexport.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+</head>
+<body>
+  <h1 style="text-align: center;">Feedback Control Online Simulation</h1>
+  <center>
+    <div style="max-width: 500px; max-height: 300px; margin-top: 20px; margin-bottom: 20px;">
+        <img src="block.jpeg" alt="Model" width="400" height="200">    
+    </div>
+  </center>
+
+  <center>
+    <div style="max-width: 900px; max-height: 400px;">
+      <canvas id="myChart" width="600" height="300"></canvas>
+    </div>
+  </center>
+  <button id="chart-download" class="btn btn-secondary">Export chart as image</button>
+
+
+<center>
+  <button onclick="motorsim()" class="btn btn-primary">Simulate System</button>
+</center>
+<br>
+
+<center>
+  <a download="data.csv" href="#" onclick="return ExcellentExport.csv(this, 'sim-tab');" class="btn btn-primary">Export to CSV</a>
+</center>
+<br>
+
+<center>
+  <table id="sim-tab">
+    <tr>
+      <th>Output</th>
+      <th>Control I/P</th>
+      <th>Error</th>
+      <th>Set Point</th>
+    </tr>
+    
+  </table>
+</center>
+
+
+
+
+
+<script>
+
+var y=0, y1=0, y2=0, x1=0, x2 = 0, x;
+var e, e1=0, I, P, D;
+var integral = 0;
+var Ki=0.004, Kp=7, sp=5;
+
+e=sp;
+
+
+function motorsim(){
+   
+    var i=0;
+
+    for(i = 0; i < 250; i++){
+
+     simulate(i)
+
+    }
+
+    // Function that simulates the system
+    function simulate(i){
+    setTimeout(function() {
+      
+      //PID Logic
+      e = sp - y;
+      x = Kp*e + (Ki -Kp)*e1 + x1;
+      e1 = e;
+      x2 = x1;
+      x1 = x;
+      
+
+      y = 0.006332*x1 + 0.005392*x2 + 1.617*y1 - 0.6169*y2;
+
+      
+      y2 = y1;
+      y1 = y;
+      
+
+      addValue(i,y)
+
+    //Chart Update
+
+      
+
+      //**********
+
+      html = '<tr><td>%y%</td><td>%x%</td><td>%e%</td><td>%sp%</td></tr>'
+      html = html.replace('%y%', y);
+      html = html.replace('%x%', x1);
+      html = html.replace('%sp%', sp);
+      html = html.replace('%e%', e);
+      document.getElementById("sim-tab").innerHTML +=  html
+    
+     }, 20*i);
+    }
+
+    
+  
+  }
+
+
+
+  // ChartJS code
+
+  var ctx = document.getElementById('myChart').getContext('2d');
+  var chart = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'line',
+
+    // The data for our dataset
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Speed',
+            // backgroundColor: 'rgb(255, 200, 220)',
+            borderColor: 'rgb(0, 255, 0)',
+            data: []
+        }, {
+            label: 'error',
+            // backgroundColor: 'rgb(255, 240, 220)',
+            borderColor: 'rgb(0, 0, 255)',
+            data: []
+        },{
+            label: 'Set Point',
+            // backgroundColor: 'rgb(255, 240, 220)',
+            borderColor: 'rgb(255, 0, 0)',
+            data: []
+        }]
+    },
+
+    // Configuration options go here
+    options: {}
+  });
+
+
+  function updateChart(){
+
+    chart.data.datasets[0].data = [0, 10, 5, 2, 20, 250, 70]
+
+    chart.update();
+  };
+
+  function addValue(i,y){
+    chart.data.datasets[0].data.push(y)
+    chart.data.datasets[1].data.push(e)
+    chart.data.datasets[2].data.push(sp)
+    chart.data.labels.push(i*20/1000);
+    chart.update();
+  };
+  
+
+  //**************to download chart*****************
+  // Convert canvas to image
+  document.getElementById('chart-download').addEventListener("click", function(e) {
+    var canvas = document.getElementById('myChart');
+
+    var dataURL = canvas.toDataURL("image/png", 1.0);
+
+    downloadImage(dataURL, 'my-chart.png');
+  });
+
+  // Save | Download image
+  function downloadImage(data, filename = 'untitled.jpeg') {
+    var a = document.createElement('a');
+    a.href = data;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+  }
+  //*******************************88
+
+
+
+
+</script>
+
+</body>
+</html>
